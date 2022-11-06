@@ -15,13 +15,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.static import static
 
 from women import views
+from main import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('women.urls')),
 ]
+
+# в режиме отладки к маршрутам добавляем еще один для статических файлов
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # обработка исключений при запросах к серверу
 # работают только при DEBUG = False в settings.py

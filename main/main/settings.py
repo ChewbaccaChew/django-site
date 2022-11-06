@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*4xv#=g6oej6c&t=0sw1*ks)s1qbk14qhft7(7q_v#(+_&o7a3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -114,10 +114,19 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images) все, что необходимо для запуска сайта
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = 'static/'  # префикс URL-адреса для статических файлов
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # путь к общей статической папке, используемой реальным веб-сервером (py manage.py collectstatic)
+STATICFILES_DIR = []  # список дополнительных путей к статическим файлам, используемых для сбора и для режима отладки
+
+
+# Media files (все, что загружают пользователи, кэш и тд)
+
+MEDIA_URL = 'media/'  # добавляет префикс URL-адреса к медиа-файлам
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
