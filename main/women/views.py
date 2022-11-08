@@ -1,5 +1,5 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404
-from django.shortcuts import render, redirect  # render - встроенный шаблонизатор обрабатывающий шаблоны
+from django.shortcuts import render, redirect, get_object_or_404  # render - встроенный шаблонизатор обрабатывающий шаблоны
 
 from .models import *
 
@@ -46,7 +46,16 @@ def page_not_found(request, exception):
 
 
 def show_post(request, post_id):
-    return HttpResponse(f'Отображение статьи с id = {post_id}')
+    post = get_object_or_404(Women, pk=post_id)  # из модели Women получить запись с pk=post_id или исключение 404
+
+    context = {
+        'post': post,
+        'menu': menu,
+        'title': post.title,
+        'cat_selected': post.cat_id,
+    }
+
+    return render(request, 'women/post.html', context=context)
 
 
 def show_category(request, cat_id):
