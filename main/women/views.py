@@ -1,6 +1,10 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404  # render - встроенный шаблонизатор обрабатывающий шаблоны
+from django.urls import reverse_lazy
+# reverse_lazy создает маршрут только тогда, когда он действительно понадобится, а не в момент создания экземпляра класса, как делает reverse
+from django.views.generic import ListView, DetailView, CreateView
 
+from .forms import *
 from .models import *
 
 menu = [
@@ -11,25 +15,82 @@ menu = [
 ]
 
 
-def index(request):
-    posts = Women.objects.all()
+class WomenHome(ListView):  # наследуется от ListView потому что это будет список
+    """Класс главной страницы сайта"""
 
-    context = {
-        'posts': posts,
-        'menu': menu,
-        'title': 'Главная страница',
-        'cat_selected': 0,
-    }
+    model = Women  # выбирает все записи из таблицы Women и отображает в виде списка
+    template_name = 'women/index.html'
+    # в template_name указываем какой шаблон использовать, если не указывать, то по умолчанию формируется путь к шаблону так:
+    # <имя приложения>/<имя модели>_list.html, в нашем случае -> women/women_list.html
+    context_object_name = 'posts'  # явно указываем имя, которое будем использовать в шаблоне для обращения к object_list
+    # extra_context = {'title': 'Главная страница'}  # так можно передавать только статические(неизменяемые) данные(числа, строки и тд)
 
-    return render(request, 'women/index.html', context=context)
+    # передача и статических и динамических данных
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)  # получаем контекст, который уже сформирован для шаблона index.html
+        context['menu'] = menu  # и изменяем/дополняем его
+        context['title'] = 'Главная страница'  # вместо передачи через extra_context
+        context['cat_selected'] = 0  # отображает синим цветом 'Все категории'
+        return context
+
+    # отображение на главной страницы только опубликованных статей(проставлена галочка в поле is_published)
+    def get_queryset(self):
+        return Women.objects.filter(is_published=True)
+
+# def index(request):
+#     posts = Women.objects.all()
+#
+#     context = {
+#         'posts': posts,
+#         'menu': menu,
+#         'title': 'Главная страница',
+#         'cat_selected': 0,
+#     }
+#
+#     return render(request, 'women/index.html', context=context)
 
 
 def about(request):
     return render(request, 'women/about.html', {'menu': menu, 'title': 'О сайте'})
 
 
-def addpage(request):
-    return HttpResponse('Добавление статьи')
+class AddPage(CreateView):  # CreateView работает с формами
+    """Класс добавления нового поста"""
+    form_class = AddPostForm  # поэтому здесь указываем класс формы с которой будет связан класс представления
+    template_name = 'women/addpage.html'
+    # если у модели нет get_absolute_url, используем:
+    success_url = reverse_lazy('home')
+    # атрибуту success_url присваиваем адрес маршрута перенаправления после добавления статьи
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Добавление статьи'
+        return context
+
+# def addpage(request):
+#     # если форма была отправлена, но не прошла проверку, возвращается пользователю с заполненными полями
+#     if request.method == 'POST':
+#         form = AddPostForm(request.POST, request.FILES)  # заполненная форма;
+#         # request.FILES - список файлов, которые были переданы на сервер из формы
+#         if form.is_valid():  # если проверка пройдена
+#             # print(form.cleaned_data)  # отобразить в консоли очищенные данные
+#             # try:
+#             #     Women.objects.create(**form.cleaned_data)
+#             #     # добавляем новую запись в таблицу; **form.cleaned_data - распаковка словаря
+#             #     return redirect('home')  # если добавление прошло успешно, то переходим на главную страницу
+#             # except:
+#             #     form.add_error(None, 'Ошибка добавления поста')  # добавляем общую ошибку, которая будет отображаться
+#
+#             # но если форма связанна с моделью можно сделать так:
+#             form.save()  # все данные переданные от формы будут сохранены в таблице Women, которая связана с формой
+#             # и сообщения об ошибках будут генерироваться django автоматически
+#             return redirect('home')
+#
+#     else:
+#         form = AddPostForm()  # пустая форма
+#
+#     return render(request, 'women/addpage.html', {'form': form, 'menu': menu, 'title': 'Добавление статьи'})
 
 
 def contact(request):
@@ -45,30 +106,68 @@ def page_not_found(request, exception):
     return HttpResponseNotFound('Страница не найдена')
 
 
-def show_post(request, post_id):
-    post = get_object_or_404(Women, pk=post_id)  # из модели Women получить запись с pk=post_id или исключение 404
+class ShowPost(DetailView):
+    """Класс для отображения отдельного поста"""
 
-    context = {
-        'post': post,
-        'menu': menu,
-        'title': post.title,
-        'cat_selected': post.cat_id,
-    }
+    model = Women
+    template_name = 'women/post.html'
+    slug_url_kwarg = 'post_slug'
+    # slug_url_kwarg - переопределение переменной для слага, которая используется в urls -> 'post/<slug:post_slug>/',
+    # по умолчанию используется имя 'slug'
+    # для переопределения имени переменной для id-шника используется pk_url_kwarg = (по умолчанию 'pk')
+    context_object_name = 'post'
 
-    return render(request, 'women/post.html', context=context)
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = context['post']
+        return context
+
+# def show_post(request, post_slug):
+#     post = get_object_or_404(Women, slug=post_slug)  # из модели Women получить запись с slug=post_slug или исключение 404
+#
+#     context = {
+#         'post': post,
+#         'menu': menu,
+#         'title': post.title,
+#         'cat_selected': post.cat_id,
+#     }
+#
+#     return render(request, 'women/post.html', context=context)
 
 
-def show_category(request, cat_id):
-    posts = Women.objects.filter(cat_id=cat_id)
+class WomenCategory(ListView):
+    """Класс для отображения всех статей принадлежащих конкретной категории"""
 
-    if len(posts) == 0:
-        raise Http404
+    model = Women
+    template_name = 'women/index.html'
+    context_object_name = 'posts'
+    allow_empty = False  # если в списке нет ни одной записи, то будет вызвано исключение 404
 
-    context = {
-        'posts': posts,
-        'menu': menu,
-        'title': 'Отображение по рубрикам',
-        'cat_selected': cat_id,
-    }
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Категория - ' + str(context['posts'][0].cat)
+        context['cat_selected'] = context['posts'][0].cat_id
+        return context
 
-    return render(request, 'women/index.html', context=context)
+    # выбрать опубликованные записи, которые соответствуют категории по указанному слагу
+    def get_queryset(self):
+        return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
+        # через kwargs можно получить любой элемент нашего маршрута из urls, в данном случае cat_slug
+        # cat__slug: обращаемся к полю slug таблицы Category, через поле cat таблицы Women, связанной с текущей записью
+
+# def show_category(request, cat_slug):
+#     posts = Women.objects.filter(slug=cat_slug)
+#
+#     if len(posts) == 0:
+#         raise Http404
+#
+#     context = {
+#         'posts': posts,
+#         'menu': menu,
+#         'title': 'Отображение по рубрикам',
+#         'cat_selected': cat_id,
+#     }
+#
+#     return render(request, 'women/index.html', context=context)

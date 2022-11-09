@@ -3,6 +3,8 @@
 {% block content %}
 <ul class="list-articles">
     {% for p in posts %}
+    {# - используется с функцией представления(или явно указать context_object_name=posts в views), а с классом WomenHome так: #}
+    {# {% for p in object_list %} object_list - коллекция формируемая автоматически классом представления ListView #}
     <li>
         <div class="article-panel">
             <p class="first">Категория: {{p.cat}}</p>

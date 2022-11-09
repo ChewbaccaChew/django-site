@@ -9,12 +9,14 @@ class WomenAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content')  # поля по которым будет осуществляться поиск
     list_filter = ('is_published', 'time_create')  # поля по которым возможна фильтрация
     list_editable = ('is_published',)  # поля редактируемые прямо в админке
+    prepopulated_fields = {'slug': ('title',)}  # заполнять поле slug на основе поля title
 
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_display_links = ('id', 'name')
     search_fields = ('name',)
+    prepopulated_fields = {'slug': ('name',)}
 
 
 admin.site.register(Women, WomenAdmin)
