@@ -3,19 +3,15 @@ from django.shortcuts import render, redirect, get_object_or_404  # render - в�
 from django.urls import reverse_lazy
 # reverse_lazy создает маршрут только тогда, когда он действительно понадобится, а не в момент создания экземпляра класса, как делает reverse
 from django.views.generic import ListView, DetailView, CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin  # Миксин для ограничения доступа
+from django.contrib.auth.decorators import login_required  # декоратор для ограничения доступа
 
 from .forms import *
 from .models import *
-
-menu = [
-    {'title': 'О сайте', 'url_name': 'about'},
-    {'title': 'Добавить статью', 'url_name': 'add_page'},
-    {'title': 'Обратная связь', 'url_name': 'contact'},
-    {'title': 'Войти', 'url_name': 'login'},
-]
+from .utils import *
 
 
-class WomenHome(ListView):  # наследуется от ListView потому что это будет список
+class WomenHome(DataMixin, ListView):  # наследуется от ListView потому что это будет список
     """Класс главной страницы сайта"""
 
     model = Women  # выбирает все записи из таблицы Women и отображает в виде списка
@@ -28,9 +24,13 @@ class WomenHome(ListView):  # наследуется от ListView потому 
     # передача и статических и динамических данных
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)  # получаем контекст, который уже сформирован для шаблона index.html
-        context['menu'] = menu  # и изменяем/дополняем его
-        context['title'] = 'Главная страница'  # вместо передачи через extra_context
-        context['cat_selected'] = 0  # отображает синим цветом 'Все категории'
+        # вместо этого:
+        # context['menu'] = menu  # и изменяем/дополняем его
+        # context['title'] = 'Главная страница'  # вместо передачи через extra_context
+        # context['cat_selected'] = 0  # отображает синим цветом пункт 'Все категории'
+        # используем метод Миксина:
+        c_def = self.get_user_context(title='Главная страница')
+        context = dict(list(context.items()) + list(c_def.items()))  # создаем списки из словарей и объединяем их в новый словарь
         return context
 
     # отображение на главной страницы только опубликованных статей(проставлена галочка в поле is_published)
@@ -50,23 +50,33 @@ class WomenHome(ListView):  # наследуется от ListView потому 
 #     return render(request, 'women/index.html', context=context)
 
 
+# @login_required  # ограничивает доступ к странице для неавторизованных
 def about(request):
     return render(request, 'women/about.html', {'menu': menu, 'title': 'О сайте'})
 
 
-class AddPage(CreateView):  # CreateView работает с формами
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):  # CreateView работает с формами;
+    # LoginRequiredMixin - делает класс недоступным для неавторизованных пользователей
+    # (достаточно просто наследоваться от него, чтобы заработал)
     """Класс добавления нового поста"""
     form_class = AddPostForm  # поэтому здесь указываем класс формы с которой будет связан класс представления
     template_name = 'women/addpage.html'
     # если у модели нет get_absolute_url, используем:
     success_url = reverse_lazy('home')
     # атрибуту success_url присваиваем адрес маршрута перенаправления после добавления статьи
+    login_url = reverse_lazy('home')  # адрес перенаправления для неавторизованных или использовать raise_exception:
+    raise_exception = True  # генерирует страницу 403 - доступ запрещен
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = 'Добавление статьи'
-        return context
+        # вместо этого:
+        # context['menu'] = menu
+        # context['title'] = 'Добавление статьи'
+        # используем метод Миксина:
+        c_def = self.get_user_context(title='Добавление статьи')
+        return dict(list(context.items()) + list(c_def.items()))
+        # лучше использовать такой return:
+        # return {**context, ** c_def}
 
 # def addpage(request):
 #     # если форма была отправлена, но не прошла проверку, возвращается пользователю с заполненными полями
@@ -106,7 +116,7 @@ def page_not_found(request, exception):
     return HttpResponseNotFound('Страница не найдена')
 
 
-class ShowPost(DetailView):
+class ShowPost(DataMixin, DetailView):
     """Класс для отображения отдельного поста"""
 
     model = Women
@@ -119,9 +129,12 @@ class ShowPost(DetailView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = context['post']
-        return context
+        # вместо этого:
+        # context['menu'] = menu
+        # context['title'] = context['post']
+        # используем метод Миксина:
+        c_def = self.get_user_context(title=context['post'])
+        return dict(list(context.items()) + list(c_def.items()))
 
 # def show_post(request, post_slug):
 #     post = get_object_or_404(Women, slug=post_slug)  # из модели Women получить запись с slug=post_slug или исключение 404
@@ -136,7 +149,7 @@ class ShowPost(DetailView):
 #     return render(request, 'women/post.html', context=context)
 
 
-class WomenCategory(ListView):
+class WomenCategory(DataMixin, ListView):
     """Класс для отображения всех статей принадлежащих конкретной категории"""
 
     model = Women
@@ -146,10 +159,14 @@ class WomenCategory(ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = 'Категория - ' + str(context['posts'][0].cat)
-        context['cat_selected'] = context['posts'][0].cat_id
-        return context
+        # вместо этого:
+        # context['menu'] = menu
+        # context['title'] = 'Категория - ' + str(context['posts'][0].cat)
+        # context['cat_selected'] = context['posts'][0].cat_id
+        # используем метод Мискина:
+        c_def = self.get_user_context(title='Категория - ' + str(context['posts'][0].cat),
+                                      cat_selected=context['posts'][0].cat_id)
+        return dict(list(context.items()) + list(c_def.items()))
 
     # выбрать опубликованные записи, которые соответствуют категории по указанному слагу
     def get_queryset(self):

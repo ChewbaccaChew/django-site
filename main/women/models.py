@@ -14,6 +14,9 @@ class Women(models.Model):
     # auto_now будет обновлять дату на текущую при каждом изменении записи
     is_published = models.BooleanField(default=True, verbose_name='Публикация')
     cat = models.ForeignKey('Category', on_delete=models.PROTECT, verbose_name='Категория')
+    # чтобы через первичную модель Category получить все связанные с ней Посты: <имя вторичной модели>_set, например:
+    # c = Category.objects.get(pk=1); c.women_set.all()
+    # можно добавить в поле cat related_name='get_posts' вместо <имя вторичной модели>_set и обращаться так: c.get_post.all()
 
     # магический метод, выводит заголовок экземпляра вместо Women_object_(1)
     def __str__(self):
@@ -25,7 +28,7 @@ class Women(models.Model):
     class Meta:
         verbose_name = 'Известные женщины'
         verbose_name_plural = 'Известные женщины'
-        ordering = ['-time_create', 'title']  # сортировка экземпляров
+        # ordering = ['-time_create', 'title']  # сортировка экземпляров
 
 
 class Category(models.Model):
@@ -41,4 +44,4 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['id']
+        # ordering = ['id']
