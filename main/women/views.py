@@ -5,6 +5,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin  # Миксин для ограничения доступа
 from django.contrib.auth.decorators import login_required  # декоратор для ограничения доступа
+from django.core.paginator import Paginator  # пагинатор для функций
 
 from .forms import *
 from .models import *
@@ -52,7 +53,13 @@ class WomenHome(DataMixin, ListView):  # наследуется от ListView п
 
 # @login_required  # ограничивает доступ к странице для неавторизованных
 def about(request):
-    return render(request, 'women/about.html', {'menu': menu, 'title': 'О сайте'})
+    contact_list = Women.objects.all()
+    paginator = Paginator(contact_list, 3)  # 3 элемента списка contact_list будут отображаться на каждой странице
+
+    page_number = request.GET.get('page')  # номер текущей страницы(которая отображается)
+    page_obj = paginator.get_page(page_number)  # список элементов текущей страницы
+
+    return render(request, 'women/about.html', {'page_obj': page_obj, 'menu': menu, 'title': 'О сайте'})
 
 
 class AddPage(LoginRequiredMixin, DataMixin, CreateView):  # CreateView работает с формами;

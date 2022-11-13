@@ -45,11 +45,11 @@
 
                             {% for c in cats %}
                             {% if c.women__count > 0 %}
-                                {% if c.pk == cat_selected %}
-                                    <li class="selected">{{ c.name }}</li>
-                                {% else %}
-                                    <li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>
-                                {% endif %}
+                            {% if c.pk == cat_selected %}
+                            <li class="selected">{{ c.name }}</li>
+                            {% else %}
+                            <li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>
+                            {% endif %}
                             {% endif %}
                             {% endfor %}
 
@@ -71,6 +71,39 @@
                         <div class="content-text">
                             {% block content %}
                             {% endblock %}
+
+                            {% if page_obj.has_other_pages %}
+                            {# .has_other_pages: True - если больше чем одна страница и False - если всего одна страница #}
+                            <nav class="list-pages">
+                                <ul>
+                                    {# кнопка для перехода на предыдущую страницу #}
+                                    {% if page_obj.has_previous %} {# существует ли предыдущая страница? #}
+                                    <li class="page-num">
+                                        <a href="?page={{ page_obj.previous_page_number }}">&lt;</a>
+                                    </li>
+                                    {% endif %}
+
+                                    {# paginator и page_obj передается в шаблон автоматически классом ListView #}
+                                    {% for p in paginator.page_range %}
+                                    {% if page_obj.number == p %}
+                                    <li class="page-num page-num-selected">{{ p }}</li>
+                                    {# отображаться будут только прошедшую следующую проверку номера страниц#}
+                                    {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2 %}
+                                    <li class="page-num">
+                                        <a href="?page={{ p }}">{{ p }}</a>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+
+                                    {# кнопка для перехода на следующую страницу #}
+                                    {% if page_obj.has_next %}
+                                    <li class="page-num">
+                                        <a href="?page={{ page_obj.next_page_number }}">&gt;</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
                         </div>
                         <!-- Конец блока контента -->
 

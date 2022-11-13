@@ -11,6 +11,8 @@ menu = [
 
 
 class DataMixin:
+    paginate_by = 3  # встроенный в ListView атрибут, принимает количество элементов на одной странице
+
     def get_user_context(self, **kwargs):
         context = kwargs  # формируем словарь из именованных параметров переданных функции get_user_context
         # cats = Category.objects.all()  # список категорий; чтобы пустые категории не отображались:
