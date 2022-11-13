@@ -6,6 +6,9 @@ from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin  # Миксин для ограничения доступа
 from django.contrib.auth.decorators import login_required  # декоратор для ограничения доступа
 from django.core.paginator import Paginator  # пагинатор для функций
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import logout, login
 
 from .forms import *
 from .models import *
@@ -114,10 +117,6 @@ def contact(request):
     return HttpResponse('Обратная связь')
 
 
-def login(request):
-    return HttpResponse('Авторизация')
-
-
 def page_not_found(request, exception):
     # функция для отображения ненайденных страниц
     return HttpResponseNotFound('Страница не найдена')
@@ -195,3 +194,47 @@ class WomenCategory(DataMixin, ListView):
 #     }
 #
 #     return render(request, 'women/index.html', context=context)
+
+
+class RegisterUser(DataMixin, CreateView):
+    """Класс для регистрации пользователя"""
+
+    # form_class = UserCreationForm  # UserCreationForm - стандартная форма django для регистрации
+    form_class = RegisterUserForm  # из forms.py
+    template_name = 'women/register.html'  # ссылка на используемый шаблон
+    success_url = reverse_lazy('login')  # адрес перенаправления при успешной регистрации
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Регистрация')
+        return dict(list(context.items()) + list(c_def.items()))
+
+    # метод авторизации, вызывается при успешной проверке формы регистрации, то есть при успешной регистрации нового пользователя
+    def form_valid(self, form):
+        user = form.save()  # сохраняем форму в БД, то есть добавляем пользователя в БД
+        login(self.request, user)  # login - стандартная функция django для авто-авторизации
+        return redirect('home')
+
+
+class LoginUser(DataMixin, LoginView):  # LoginView - стандартный класс представления django
+    """Класс для авторизации пользователя"""
+
+    # form_class = AuthenticationForm  # AuthenticationForm - стандартная форма авторизации django
+    form_class = LoginUserForm  # из forms.py
+    template_name = 'women/login.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Авторизация')
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_success_url(self):
+        # переопределяем путь перенаправления после успешной аутентификации; по дуфолту путь: /accounts/profile/
+        return reverse_lazy('home')
+    # или в settings.py определить константу LOGIN_REDIRECT_URL
+
+
+# функция выхода
+def logout_user(request):
+    logout(request)  # logout - стандартная функция django
+    return redirect('login')  # перенаправление после выхода
