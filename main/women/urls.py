@@ -1,9 +1,11 @@
 from django.urls import path
+from django.views.decorators.cache import cache_page  # кэширование
 
 from women import views
 
 urlpatterns = [
     # path('', views.index, name='home'),
+    # path('', cache_page(60)(views.WomenHome.as_view()), name='home'),  # кэширование на уровне Контроллеров
     path('', views.WomenHome.as_view(), name='home'),
 
     path('about/', views.about, name='about'),

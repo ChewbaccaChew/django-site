@@ -36,8 +36,13 @@
             <table class="table-content" border=0 cellpadding="0" cellspacing="0">
                 <tr>
                     <!-- Sidebar слева -->
+                    {# {% load cache %} #} {# кэширование на уровне шаблона #}
+
                     <td valign="top" class="left-chapters">
                         <ul id="leftchapters">
+                            {# {% cache 60 sidebar %} #}
+                            {# тэг время_действия_кэша_в_секундах ключ_по_которому_будет_храниться_кэш #}
+
                             {% if cat_selected == 0 %}
                             <li class="selected">Все категории</li>
                             {% else %}
@@ -53,6 +58,8 @@
                             {% endif %}
                             {% endif %}
                             {% endfor %}
+
+                            {# {% endcache %} #}
 
                             <li class="share">
                                 <p>Наш канал</p>
