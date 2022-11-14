@@ -25,8 +25,11 @@ urlpatterns = [
     path('', include('women.urls')),
 ]
 
-# в режиме отладки к маршрутам добавляем еще один для статических файлов
+# в режиме отладки к маршрутам добавляем доп пути: для django-debug-toolbar и для статических файлов
 if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [path('__debug__/', include('debug_toolbar.urls'))]
+
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # обработка исключений при запросах к серверу

@@ -39,7 +39,8 @@ class WomenHome(DataMixin, ListView):  # наследуется от ListView п
 
     # отображение на главной страницы только опубликованных статей(проставлена галочка в поле is_published)
     def get_queryset(self):
-        return Women.objects.filter(is_published=True)
+        return Women.objects.filter(is_published=True).select_related('cat')
+        # select_related - жадный запрос, который свяжет статьи с данными из таблицы Category
 
 # def index(request):
 #     posts = Women.objects.all()
@@ -170,13 +171,13 @@ class WomenCategory(DataMixin, ListView):
         # context['title'] = 'Категория - ' + str(context['posts'][0].cat)
         # context['cat_selected'] = context['posts'][0].cat_id
         # используем метод Мискина:
-        c_def = self.get_user_context(title='Категория - ' + str(context['posts'][0].cat),
-                                      cat_selected=context['posts'][0].cat_id)
+        c = Category.objects.get(slug=self.kwargs['cat_slug'])  # берем категорию по слагу для которой выводим get_user_context
+        c_def = self.get_user_context(title='Категория - ' + str(c.name), cat_selected=c.pk)
         return dict(list(context.items()) + list(c_def.items()))
 
     # выбрать опубликованные записи, которые соответствуют категории по указанному слагу
     def get_queryset(self):
-        return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
+        return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
         # через kwargs можно получить любой элемент нашего маршрута из urls, в данном случае cat_slug
         # cat__slug: обращаемся к полю slug таблицы Category, через поле cat таблицы Women, связанной с текущей записью
 
