@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'debug_toolbar',
+    'captcha',  # https://django-simple-captcha.readthedocs.io/en/latest/usage.html#using-django-simple-captcha
 
     'women.apps.WomenConfig',
 ]

@@ -9,7 +9,7 @@ urlpatterns = [
     path('', views.WomenHome.as_view(), name='home'),
 
     path('about/', views.about, name='about'),
-    path('contact/', views.contact, name='contact'),
+    path('contact/', views.ContactFormView.as_view(), name='contact'),
     path('login/', views.LoginUser.as_view(), name='login'),
     path('logout/', views.logout_user, name='logout'),
     path('register/', views.RegisterUser.as_view(), name='register'),
